@@ -22,6 +22,9 @@ object S3 {
   def apply(config: ClientConfiguration, credentials: Credentials)(implicit region: Region): S3 =
     new ConfiguredS3Client(config, BasicCredentialsProvider(credentials.getAWSAccessKeyId, credentials.getAWSSecretKey)).at(region)
 
+  def apply(config: ClientConfiguration)(implicit region: Region): S3 =
+    new ConfiguredS3Client(config, CredentialsLoader.load()).at(region)
+
 }
 
 /**
