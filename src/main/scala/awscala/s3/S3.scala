@@ -3,6 +3,7 @@ package awscala.s3
 import java.io.{ ByteArrayInputStream, File, InputStream }
 
 import awscala._
+import com.amazonaws.ClientConfiguration
 import com.amazonaws.services.{ s3 => aws }
 
 import scala.annotation.tailrec
@@ -17,6 +18,13 @@ object S3 {
   def apply(accessKeyId: String, secretAccessKey: String)(implicit region: Region): S3 = apply(BasicCredentialsProvider(accessKeyId, secretAccessKey)).at(region)
 
   def at(region: Region): S3 = apply()(region)
+
+  def apply(config: ClientConfiguration, credentials: Credentials)(implicit region: Region): S3 =
+    new ConfiguredS3Client(config, BasicCredentialsProvider(credentials.getAWSAccessKeyId, credentials.getAWSSecretKey)).at(region)
+
+  def apply(config: ClientConfiguration)(implicit region: Region): S3 =
+    new ConfiguredS3Client(config, CredentialsLoader.load()).at(region)
+
 }
 
 /**
@@ -292,3 +300,19 @@ class S3Client(credentialsProvider: CredentialsProvider = CredentialsLoader.load
   override def createBucket(name: String): Bucket = super.createBucket(name)
 }
 
+/**
+ * Configured Implementation
+ *
+ * @param config ClientConfiguration
+ * @param credentialsProvider CredentialsProvider
+ *
+ */
+class ConfiguredS3Client(
+  config: ClientConfiguration,
+  credentialsProvider: CredentialsProvider = CredentialsLoader.load()
+)
+    extends aws.AmazonS3Client(credentialsProvider, config)
+    with S3 {
+
+  override def createBucket(name: String): Bucket = super.createBucket(name)
+}
